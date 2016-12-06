@@ -1,0 +1,63 @@
+<script src="//interactive-services.blackbaud.com/ecbu/js/hyperpart/v/1.0/dev/hyperscripts.js"></script>
+<script>
+
+function initHyperPart(instance) {
+
+/*
+HyperTables is a fun easy way to create cool customized UI and UX 
+using templating libraries. The default template library responsible for
+outputting the editor view and display view.
+
+Initalize Variables for rendering your custom part
+@data returns custom content part data
+@configs returns the moduletype of the content part
+@region returns the layout placeholder ID. Used to display the part
+@env initializes the nunjucks templating library. This is optional if using nunjucks.
+ the nunjucks.configure function needs the relative path to the template file to output.
+ You should always use the file library to house all templates for ease of access and modularity.
+*/
+var data = instance.settings.collection.data;
+var configs = instance.settings.collection.configs;
+var template_name = instance.settings.collection.component;
+var region = instance.elementId;
+var pageID = BLACKBAUD.api.pageInformation.pageId;
+/*
+RENDER HTML TEMPLATE TO DOM
+*/
+
+if(template_name == 'hyper_form'){
+    /**/
+    Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function (){
+      HYPER.init({
+      path_to_templates:'/file/webdev/templates',
+      hyper_part: 'standard-form',
+      data: data,
+      configs:configs,
+      template_name:template_name+'.html'
+      });
+    });
+    /**/
+}else{
+    
+    if( configs.layout === null || configs.layout === ''){
+        HYPER.init({
+        path_to_templates:'/file/webdev/templates',
+        data: data,
+        configs:configs,
+        pageID:pageID,
+        regionID:region,
+        template_name:template_name+'.html'
+        });
+      // var env = nunjucks.configure('/file/webdev/templates');
+        // var hypertemplate = env.render(template_name+'.html', {"data":data,"configs":configs,"pageID":pageID,"regionID":region.split('_')[0]});
+    }else{
+        var custommarkup = configs.layout;
+        var hypertemplate = nunjucks.renderString(custommarkup, {"data":data,"configs":configs,"pageID":pageID,"regionID":region.split('_')[0]});
+        // Add the element to the page
+        $('#'+region).prepend(hypertemplate);
+    }  
+}
+
+}
+
+</script>
