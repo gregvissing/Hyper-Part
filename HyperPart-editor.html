@@ -1,0 +1,190 @@
+<!-- 
+EDITIOR
+ -->
+
+ <!--
+***********************************************
+Editor - HYPER PART
+***********************************************
+Author(s): DERRY SPANN
+***********************************************
+CHANGE LOG
+***********************************************
+Version 1.0.1
+#### Features:
+- sortable rows ( using jqueryUI )
+- markdown editor ( using simpleMDE )
+- images picker
+- crud operations
+
+CUSTOM CONTENT PART IS GENERAL USE FOR ANY CUSTOM COMPONENTS.
+ADDING THIS SINGLE PART PROVIDES SUPPORT FOR BUILDING OTHER COMPONENTS
+WITHOUT THE NEED TO RE-CREATE ANOTHER CUSTOM PART.
+-->
+<link rel="stylesheet" type="text/css" href="https://interactive-services.blackbaud.com/ecbu/js/hyperpart/HyperPartStyles.css" media="all" />
+<link rel="stylesheet" href="//cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<script src="//interactive-services.blackbaud.com/ecbu/js/hyperpart/v/1.0/dev/hyperscripts.js"></script>
+<script src="//cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+
+<div class="row">
+    <h1>Hyper Part</h1>
+    <p>Choose a comoponent to create.</p>
+    <div class="col12 componentType">
+        
+    </div>
+    <div id="editorview" class="row">
+        ...try Selecting a component..
+    </div>
+</div>
+
+<script type="text/javascript">
+    //start template engine
+    HYPER.init();
+    var moduledata = [];
+    var moduledatakeys = [];
+    var moduleconfigs;
+    var modulecomponent;
+    var modulecompontentLayout;
+    var activePostID;
+    var COMPONENTS = [];
+    var myeditor;
+    $(document).ready(function () {
+        componentsList = [
+                {
+                    name:'Hyper form',
+                    publish:true,
+                    details:'custom standard donation form layout BBNC/BBIS',
+                    html:'insert default standard form markup here',
+                    settingsInputs:[
+                    {name:"form image",type:"image"},
+                    {name:"form video",type:"text"},
+                    {name:"form title",type:"text"},
+                    {name:"form message",type:"textarea"}
+                    ]
+                },
+                {
+                    name:"Article",
+                    publish:true,
+                    details:"general content area",
+                    html:"load default article here.",
+                    settingsInputs:[
+                    {name:"catalog title",type:"text"},
+                    {name:"catalog description",type:"textarea"},
+                    {name:"catalog image",type:"image"}
+                    ]
+                },
+                 {
+                    name:"Catalog",
+                    publish:true,
+                    details:"Create unique slideshow presentations with captions and videos",
+                    html:"load default catalog markup here.",
+                    settingsInputs:[
+                    {name:"catalog title",type:"text"},
+                    {name:"catalog description",type:"textarea"},
+                    {name:"catalog color",type:"text",placeholder:"type one of the following: navy,royal,sky"}
+                    ],
+                    inputs:[
+                            {name:"item title",type:"text"},
+                            {name:"item image",type:"image"},
+                            {name:"overlay word",type:"text"},
+                            {name:"form url",type:"link"},
+                            {name:"gift amount 1",type:"text"},
+                            {name:"gift amount 2",type:"text"},
+                            {name:"item caption",type:"editor"}
+                        ]
+                },
+            ];
+        function loadComponents(componentsList){
+            // DEVELOPERS LOOKING TO CREATE A NEW COMPONENT NOT LISTED HERE SHOULD
+            // COPY AN OBJECT AND ADJUST THE PROPERTIES ACCORDINGLY
+            var selectComponentDD = '<select name="componentType" id="componentType"></select>';
+            document.querySelector('.componentType').innerHTML = selectComponentDD;
+            
+            for (var i = 0; i < componentsList.length; i++) {
+                if(componentsList[i].publish){   
+                    var option = '<option value="'+componentsList[i].name.toLowerCase().replace(' ','_')+'">'+componentsList[i].name+'</option>';
+                    document.querySelector('#componentType').innerHTML += option;
+                    COMPONENTS.push(componentsList[i]);
+                }
+            }
+            initEditorSwitcher();
+
+        }
+
+        function loadSettings(settings) {
+            // check for exisiting objects
+            if (settings.collection != undefined) {
+                //load existing data into collection
+                console.log(settings);
+                moduledata = settings.collection['data'];
+                moduleconfigs = settings.collection['configs'];
+                modulecomponent = settings.collection['component'];
+                moduleComponentLayout = settings.collection['componentLayout'];
+                loadComponents(componentsList);
+                document.querySelector('.componentType').innerHTML = '<p class="componentName">'+modulecomponent.replace('_',' ')+'</p>';
+                HYPER.CCPeditor.init();
+
+            }else{
+                //LOAD DEFAULT COMPONENT
+                console.log('looks like you just getting started.');
+                loadComponents(componentsList);
+                
+                BLACKBAUD.api.customPartEditor.settings.collection = {
+                    "component":false,
+                    "componentLayout":false,
+                    "configs":{},
+                    "data":[]
+                }
+            } // end if settings exist
+            
+        }//end load from settings
+
+        function saveSettings() {
+            // BLACKBAUD.api.customPartEditor.settings = {};
+            BLACKBAUD.api.customPartEditor.settings = {
+                collection: {
+                    data: moduledata,
+                    configs: moduleconfigs,
+                    component:BLACKBAUD.api.customPartEditor.settings.collection.component.replace(' ','_').toLowerCase(),
+                    componentLayout:BLACKBAUD.api.customPartEditor.settings.collection.componentLayout
+                }
+            };
+            return true;
+        }// end save settings
+        function initEditorSwitcher(){
+            $('select#componentType').on('change',function(){
+                var curroption = $('#componentType').prop('selectedIndex');
+                console.log(curroption,COMPONENTS[curroption].name);
+                BLACKBAUD.api.customPartEditor.settings.collection.component = COMPONENTS[curroption].name;
+                BLACKBAUD.api.customPartEditor.settings.collection.componentLayout = COMPONENTS[curroption]
+                HYPER.CCPeditor.init();
+            });
+        }
+        function launchLinkEditor() {
+            function addLink(link) {
+            
+            if (link.url) {
+                $('#pageUrl').val(link.url);
+                $('#pageID').val(link.pageId); 
+            }
+    
+            }
+            BLACKBAUD.api.customPartEditor.links.launchLinkPicker({
+                callback: addLink
+            });
+        }
+        $('a.hyper-link').on('click',function(){
+            launchLinkEditor();
+        });
+        
+
+
+        // load from previous settings
+        loadSettings(BLACKBAUD.api.customPartEditor.settings);
+        //Load built in editor
+        // HYPER.CCPeditor.init();
+        // save settings when clicking save
+        BLACKBAUD.api.customPartEditor.onSave = saveSettings;
+        
+    });
+</script>
